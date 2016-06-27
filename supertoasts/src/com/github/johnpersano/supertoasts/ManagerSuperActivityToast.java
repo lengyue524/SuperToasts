@@ -1,18 +1,17 @@
 /**
- *  Copyright 2014 John Persano
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *	you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *	Unless required by applicable law or agreed to in writing, software
- *	distributed under the License is distributed on an "AS IS" BASIS,
- *	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *	See the License for the specific language governing permissions and
- *	limitations under the License.
- *
+ * Copyright 2014 John Persano
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.github.johnpersano.supertoasts;
@@ -21,8 +20,15 @@ import android.app.Activity;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.animation.*;
+import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.ScaleAnimation;
+import android.view.animation.TranslateAnimation;
+import android.widget.LinearLayout;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -149,38 +155,37 @@ class ManagerSuperActivityToast extends Handler {
     private void displaySuperToast(SuperActivityToast superActivityToast) {
 
         /* If this SuperActivityToast is somehow already showing do nothing */
-        if(superActivityToast.isShowing()) {
+        if (superActivityToast.isShowing()) {
 
             return;
 
         }
 
-        final ViewGroup viewGroup = superActivityToast.getViewGroup();
+        final WindowManager windowManager = superActivityToast.getWindowManager();
 
         final View toastView = superActivityToast.getView();
 
-        if(viewGroup != null) {
+        final LinearLayout rootLayout = (LinearLayout) toastView.findViewById(R.id.root_layout);
 
-            try {
+        try {
 
-                viewGroup.addView(toastView);
+            windowManager.addView(toastView, superActivityToast.getWindowManagerParams());
 
-                if(!superActivityToast.getShowImmediate()) {
+            if (!superActivityToast.getShowImmediate()) {
 
-                    toastView.startAnimation(getShowAnimation(superActivityToast));
-
-                }
-
-            } catch(IllegalStateException e) {
-
-                this.cancelAllSuperActivityToastsForActivity(superActivityToast.getActivity());
+                rootLayout.startAnimation(getShowAnimation(superActivityToast));
 
             }
 
+        } catch (IllegalStateException e) {
+
+            this.cancelAllSuperActivityToastsForActivity(superActivityToast.getActivity());
+
         }
 
+
         /* Dismiss the SuperActivityToast at the set duration time unless indeterminate */
-        if(!superActivityToast.isIndeterminate()) {
+        if (!superActivityToast.isIndeterminate()) {
 
             Message message = obtainMessage(Messages.REMOVE);
             message.obj = superActivityToast;
@@ -192,12 +197,12 @@ class ManagerSuperActivityToast extends Handler {
     }
 
     /**
-     *  Hide and remove the SuperActivityToast
+     * Hide and remove the SuperActivityToast
      */
     void removeSuperToast(final SuperActivityToast superActivityToast) {
 
         /* If SuperActivityToast has been dismissed before it shows, do not attempt to show it */
-        if(!superActivityToast.isShowing()) {
+        if (!superActivityToast.isShowing()) {
 
             mList.remove(superActivityToast);
 
@@ -208,52 +213,49 @@ class ManagerSuperActivityToast extends Handler {
         /* If being called somewhere else get rid of delayed remove message */
         removeMessages(Messages.REMOVE, superActivityToast);
 
-        final ViewGroup viewGroup = superActivityToast.getViewGroup();
+        final WindowManager windowManager = superActivityToast.getWindowManager();
 
         final View toastView = superActivityToast.getView();
+        final LinearLayout rootLayout = (LinearLayout) toastView.findViewById(R.id.root_layout);
 
-        if (viewGroup != null) {
+        Animation animation = getDismissAnimation(superActivityToast);
 
-            Animation animation = getDismissAnimation(superActivityToast);
+        animation.setAnimationListener(new Animation.AnimationListener() {
 
-            animation.setAnimationListener(new Animation.AnimationListener() {
-
-                @Override
-                public void onAnimationStart(Animation animation) {
+            @Override
+            public void onAnimationStart(Animation animation) {
 
                     /* Do nothing */
 
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+
+                if (superActivityToast.getOnDismissWrapper() != null) {
+
+                    superActivityToast.getOnDismissWrapper().onDismiss(superActivityToast.getView());
+
                 }
-
-                @Override
-                public void onAnimationEnd(Animation animation) {
-
-                    if(superActivityToast.getOnDismissWrapper() != null){
-
-                        superActivityToast.getOnDismissWrapper().onDismiss(superActivityToast.getView());
-
-                    }
 
                     /* Show the SuperActivityToast next in the list if any exist */
-                    ManagerSuperActivityToast.this.showNextSuperToast();
+                windowManager.removeView(toastView);
+                ManagerSuperActivityToast.this.showNextSuperToast();
 
-                }
+            }
 
-                @Override
-                public void onAnimationRepeat(Animation animation) {
+            @Override
+            public void onAnimationRepeat(Animation animation) {
 
                     /* Do nothing */
 
-                }
-            });
+            }
+        });
 
-            toastView.startAnimation(animation);
+        rootLayout.startAnimation(animation);
 
-            viewGroup.removeView(toastView);
 
-            mList.poll();
-
-        }
+        mList.poll();
 
     }
 
@@ -269,10 +271,8 @@ class ManagerSuperActivityToast extends Handler {
 
             if (superActivityToast.isShowing()) {
 
-                superActivityToast.getViewGroup().removeView(
+                superActivityToast.getWindowManager().removeView(
                         superActivityToast.getView());
-
-                superActivityToast.getViewGroup().invalidate();
 
             }
 
@@ -300,7 +300,7 @@ class ManagerSuperActivityToast extends Handler {
 
                 if (superActivityToast.isShowing()) {
 
-                    superActivityToast.getViewGroup().removeView(
+                    superActivityToast.getWindowManager().removeView(
                             superActivityToast.getView());
 
                 }
@@ -319,7 +319,7 @@ class ManagerSuperActivityToast extends Handler {
     /**
      * Used in SuperActivityToast saveState().
      */
-    LinkedList<SuperActivityToast> getList(){
+    LinkedList<SuperActivityToast> getList() {
 
         return mList;
 
@@ -379,7 +379,7 @@ class ManagerSuperActivityToast extends Handler {
 
         } else {
 
-            Animation animation= new AlphaAnimation(0f, 1f);
+            Animation animation = new AlphaAnimation(0f, 1f);
             animation.setDuration(500);
             animation.setInterpolator(new DecelerateInterpolator());
 
@@ -390,7 +390,7 @@ class ManagerSuperActivityToast extends Handler {
     }
 
     /**
-     *  Returns an animation based on the {@link com.github.johnpersano.supertoasts.SuperToast.Animations} enums
+     * Returns an animation based on the {@link com.github.johnpersano.supertoasts.SuperToast.Animations} enums
      */
     private Animation getDismissAnimation(SuperActivityToast superActivityToast) {
 

@@ -1,18 +1,17 @@
 /**
- *  Copyright 2014 John Persano
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *	you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *	Unless required by applicable law or agreed to in writing, software
- *	distributed under the License is distributed on an "AS IS" BASIS,
- *	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *	See the License for the specific language governing permissions and
- *	limitations under the License.
- *
+ * Copyright 2014 John Persano
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.github.johnpersano.supertoasts;
@@ -21,15 +20,27 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.PixelFormat;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.*;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.View.OnTouchListener;
-import android.widget.*;
+import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+
 import com.github.johnpersano.supertoasts.SuperToast.Animations;
 import com.github.johnpersano.supertoasts.SuperToast.IconPosition;
 import com.github.johnpersano.supertoasts.SuperToast.Type;
@@ -87,6 +98,8 @@ public class SuperActivityToast {
     private View mDividerView;
     private ViewGroup mViewGroup;
     private View mToastView;
+    private WindowManager mWindowManager;
+    private WindowManager.LayoutParams mWindowManagerParams;
 
     /**
      * Instantiates a new {@value #TAG}.
@@ -109,14 +122,21 @@ public class SuperActivityToast {
         mViewGroup = (ViewGroup) activity
                 .findViewById(android.R.id.content);
 
-        mToastView = mLayoutInflater.inflate(R.layout.supertoast,
-                mViewGroup, false);
+        LinearLayout toastView = (LinearLayout) mLayoutInflater.inflate(R.layout.supertoast,
+                null, false);
+
+        RelativeLayout relativeLayout = new RelativeLayout(mActivity);
+        relativeLayout.addView(toastView);
+
+        mToastView = relativeLayout;
 
         mMessageTextView = (TextView) mToastView
                 .findViewById(R.id.message_textview);
 
         mRootLayout = (LinearLayout) mToastView
                 .findViewById(R.id.root_layout);
+
+        mWindowManager = activity.getWindowManager();
 
     }
 
@@ -150,6 +170,8 @@ public class SuperActivityToast {
 
         mRootLayout = (LinearLayout) mToastView
                 .findViewById(R.id.root_layout);
+
+        mWindowManager = activity.getWindowManager();
 
         this.setStyle(style);
 
@@ -220,6 +242,7 @@ public class SuperActivityToast {
         mRootLayout = (LinearLayout) mToastView
                 .findViewById(R.id.root_layout);
 
+        mWindowManager = activity.getWindowManager();
     }
 
     /**
@@ -288,6 +311,8 @@ public class SuperActivityToast {
         mRootLayout = (LinearLayout) mToastView
                 .findViewById(R.id.root_layout);
 
+        mWindowManager = activity.getWindowManager();
+
         this.setStyle(style);
 
     }
@@ -298,8 +323,40 @@ public class SuperActivityToast {
      * is dismissed.
      */
     public void show() {
+        mWindowManagerParams = new WindowManager.LayoutParams();
+
+        mWindowManagerParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+        mWindowManagerParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+        mWindowManagerParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON;
+        mWindowManagerParams.format = PixelFormat.TRANSLUCENT;
+        mWindowManagerParams.gravity = Gravity.BOTTOM | Gravity.CENTER;
+        mWindowManagerParams.y = mActivity.getResources().getDimensionPixelSize(R.dimen.toast_hover);
 
         ManagerSuperActivityToast.getInstance().add(this);
+
+    }
+
+    /**
+     * Returns the window manager that the {@value #TAG} is attached to.
+     *
+     * @return {@link android.view.WindowManager}
+     */
+    public WindowManager getWindowManager() {
+
+        return mWindowManager;
+
+    }
+
+    /**
+     * Returns the window manager layout params of the {@value #TAG}.
+     *
+     * @return {@link android.view.WindowManager.LayoutParams}
+     */
+    public WindowManager.LayoutParams getWindowManagerParams() {
+
+        return mWindowManagerParams;
 
     }
 
@@ -696,7 +753,7 @@ public class SuperActivityToast {
     /**
      * Used in orientation change recreation.
      */
-    private Parcelable getToken(){
+    private Parcelable getToken() {
 
         return this.mToken;
 
@@ -842,7 +899,7 @@ public class SuperActivityToast {
      */
     public CharSequence getButtonText() {
 
-        if(mButton != null) {
+        if (mButton != null) {
 
             return mButton.getText();
 
@@ -922,7 +979,7 @@ public class SuperActivityToast {
      */
     public int getButtonTextColor() {
 
-        if(mButton != null) {
+        if (mButton != null) {
 
             return mButton.getCurrentTextColor();
 
@@ -975,7 +1032,7 @@ public class SuperActivityToast {
      */
     public float getButtonTextSize() {
 
-        if(mButton != null) {
+        if (mButton != null) {
 
             return mButton.getTextSize();
 
@@ -1019,7 +1076,7 @@ public class SuperActivityToast {
      */
     public int getProgress() {
 
-        if(mProgressBar != null) {
+        if (mProgressBar != null) {
 
             return mProgressBar.getProgress();
 
@@ -1063,7 +1120,7 @@ public class SuperActivityToast {
      */
     public int getMaxProgress() {
 
-        if(mProgressBar != null) {
+        if (mProgressBar != null) {
 
             return mProgressBar.getMax();
 
@@ -1173,7 +1230,7 @@ public class SuperActivityToast {
      *
      * @return {@link android.widget.LinearLayout}
      */
-    private LinearLayout getRootLayout(){
+    private LinearLayout getRootLayout() {
 
         return mRootLayout;
 
@@ -1391,7 +1448,7 @@ public class SuperActivityToast {
                     Configuration.SCREENLAYOUT_SIZE_MASK;
 
             /* Changes the size of the BUTTON type SuperActivityToast to mirror Gmail app */
-            if(screenSize >= Configuration.SCREENLAYOUT_SIZE_LARGE) {
+            if (screenSize >= Configuration.SCREENLAYOUT_SIZE_LARGE) {
 
                 FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);

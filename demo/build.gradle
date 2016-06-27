@@ -6,7 +6,7 @@ buildscript{
 		mavenCentral()
 	}
 	dependencies{
-        classpath 'com.android.tools.build:gradle:0.9.+'
+        classpath 'com.android.tools.build:gradle:2.1.2'
 	}
 }
 
@@ -21,7 +21,7 @@ repositories {
 dependencies {
 	compile project(':supertoasts')
 	compile 'com.actionbarsherlock:actionbarsherlock:4.4.0@aar'
-	compile 'com.android.support:support-v4:19.0.+'
+	compile 'com.android.support:support-v4:24.0.0'
 }
 
 android {
@@ -29,7 +29,7 @@ android {
 	      abortOnError false  
 	}
 	compileSdkVersion 19
-	buildToolsVersion "19.0.2"
+	buildToolsVersion "23.0.3"
 
 	defaultConfig {
 		minSdkVersion 8

@@ -181,6 +181,10 @@ class ManagerSuperActivityToast extends Handler {
 
             this.cancelAllSuperActivityToastsForActivity(superActivityToast.getActivity());
 
+        } catch (WindowManager.BadTokenException e){
+
+            this.cancelAllSuperActivityToastsForActivity(superActivityToast.getActivity());
+
         }
 
 

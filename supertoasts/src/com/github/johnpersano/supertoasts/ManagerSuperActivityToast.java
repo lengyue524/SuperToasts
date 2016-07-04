@@ -244,6 +244,7 @@ class ManagerSuperActivityToast extends Handler {
 
                     /* Show the SuperActivityToast next in the list if any exist */
                 windowManager.removeView(toastView);
+                mList.poll();
                 ManagerSuperActivityToast.this.showNextSuperToast();
 
             }
@@ -259,7 +260,6 @@ class ManagerSuperActivityToast extends Handler {
         rootLayout.startAnimation(animation);
 
 
-        mList.poll();
 
     }
 
